@@ -111,7 +111,10 @@ class RosyWriterCIFilterRenderer: NSObject, RosyWriterRenderer {
 //        _rosyFilter = CIFilter(name: "CIColorMatrix")
 // Mohsin updates
         
-        _rosyFilter = CIFilter(name: "CIPhotoEffectNoir")
+        _rosyFilter = CIFilter(name: "CIHighlightShadowAdjust")
+        _rosyFilter.setValue(2.0, forKey: "inputShadowAmount")
+//        _rosyFilter.setValue(CIVector(values: [800, 400], count: 2), forKey: "inputCenter")
+
 
 //        _rosyFilter.setValue(CIVector(values: [0.2, 0.1, 0.2, 0], count: 4), forKey: "inputMinComponents")
 
@@ -135,6 +138,8 @@ class RosyWriterCIFilterRenderer: NSObject, RosyWriterRenderer {
         //Mohsin main filtering here we can add multifilters
         _rosyFilter.setValue(sourceImage, forKey: kCIInputImageKey)
         var filteredImage = _rosyFilter.valueForKey(kCIOutputImageKey) as! CIImage?
+        
+        print(filteredImage)
         
         print(self.delegateMohsin)
         if let moreFilterImage = self.delegateMohsin?.filterImageBuffer(filteredImage!){

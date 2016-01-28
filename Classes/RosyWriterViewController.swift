@@ -170,24 +170,6 @@ class RosyWriterViewController: UIViewController, RosyWriterCapturePipelineDeleg
         return true
     }
     
-    
-    
-    
-    
-    
-    // MohsinDelegate
-    func filterImageBuffer(sourceImage : CIImage) -> CIImage?{
-        
-        print("Mohsin delegate")
-        let filter = CIFilter(name: "CISpotLight")!
-
-        
-        filter.setValue(sourceImage, forKey: kCIInputImageKey)
-        let filteredImage = filter.valueForKey(kCIOutputImageKey) as! CIImage?
-        
-        
-        return filteredImage
-    }
 
     
     
@@ -320,20 +302,83 @@ class RosyWriterViewController: UIViewController, RosyWriterCapturePipelineDeleg
     
     
     
+    
+    
+    var filter = CIFilter(name: "CIStraightenFilter")!
+
+    
     @IBAction func changeFilter(sender: UIButton) {
         
     // Mohsin
-        let filter = CIFilter(name: "CISpotLight")!
+      self.filter = CIFilter(name: "CISepiaTone")!
         
-        
+        self.filter.setValue(0.5, forKey: kCIInputIntensityKey)
+
 //        filter.setValue(CIVector(values: [0.2, 0.1, 0.2, 0], count: 4), forKey: "inputMinComponents")
 //
-//        filter.setValue(1.1, forKey: "inputHighlightAmount")
 //        filter.setValue(2.1, forKey: "inputShadowAmount")
         
-        self.capturePipeline._renderer.setRosyFilter(filter)
+//        self.capturePipeline._renderer.setRosyFilter(self.filter)
 
     
     }
+    
+    
+    func oldPhoto(img: CIImage, withAmount intensity: Float) -> CIImage {
+        // 1
+        let sepia = CIFilter(name:"CISepiaTone")
+        sepia!.setValue(img, forKey:kCIInputImageKey)
+        sepia!.setValue(intensity, forKey:"inputIntensity")
+        
+        // 2
+        let random = CIFilter(name:"CIRandomGenerator")
+        
+        // 3
+        let lighten = CIFilter(name:"CIColorControls")
+        lighten!.setValue(random!.outputImage, forKey:kCIInputImageKey)
+        lighten!.setValue(1 - intensity, forKey:"inputBrightness")
+        lighten!.setValue(0, forKey:"inputSaturation")
+        
+        // 4
+        let croppedImage = lighten!.outputImage!.imageByCroppingToRect(img.extent)
+        
+        // 5
+        let composite = CIFilter(name:"CIHardLightBlendMode")
+        composite!.setValue(sepia!.outputImage, forKey:kCIInputImageKey)
+        composite!.setValue(croppedImage, forKey:kCIInputBackgroundImageKey)
+        
+        // 6
+        let vignette = CIFilter(name:"CIVignette")
+        vignette!.setValue(composite!.outputImage, forKey:kCIInputImageKey)
+        vignette!.setValue(intensity * 2, forKey:"inputIntensity")
+        vignette!.setValue(intensity * 30, forKey:"inputRadius")
+        
+        // 7
+        return vignette!.outputImage!
+    }
+    
+    
+    var number = 0.0
+    // MohsinDelegate
+    func filterImageBuffer(sourceImage : CIImage) -> CIImage?{
+        
+        print("Mohsin delegate")
+        
+//        self.filter.setValue(CIVector(values: [200,200], count: 2), forKey: "inputCenter")
+        self.filter.setValue(number, forKey: "inputAngle")
+        number += 0.05
+        
+        
+        let filteredImage1 = self.oldPhoto(sourceImage, withAmount: 0.6)
+
+        self.filter.setValue(filteredImage1, forKey: kCIInputImageKey)
+        let filteredImage = self.filter.valueForKey(kCIOutputImageKey) as! CIImage?
+        
+        
+        
+        
+        return filteredImage
+    }
+
     
 }
