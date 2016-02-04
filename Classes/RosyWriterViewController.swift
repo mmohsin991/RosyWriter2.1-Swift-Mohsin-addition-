@@ -324,7 +324,7 @@ class RosyWriterViewController: UIViewController, RosyWriterCapturePipelineDeleg
     }
     
     
-    func oldPhoto(img: CIImage, withAmount intensity: Float) -> CIImage {
+    func customPhoto(img: CIImage, withAmount intensity: Float) -> CIImage {
         // 1
         let sepia = CIFilter(name:"CISepiaTone")
         sepia!.setValue(img, forKey:kCIInputImageKey)
@@ -339,6 +339,8 @@ class RosyWriterViewController: UIViewController, RosyWriterCapturePipelineDeleg
         lighten!.setValue(1 - intensity, forKey:"inputBrightness")
         lighten!.setValue(0, forKey:"inputSaturation")
         
+        
+   
         // 4
         let croppedImage = lighten!.outputImage!.imageByCroppingToRect(img.extent)
         
@@ -358,6 +360,78 @@ class RosyWriterViewController: UIViewController, RosyWriterCapturePipelineDeleg
     }
     
     
+    func oldFilmPhoto(img: CIImage, withAmount intensity: Float) -> CIImage {
+        // 1
+        let sepia = CIFilter(name:"CISepiaTone")
+        sepia!.setValue(img, forKey:kCIInputImageKey)
+        sepia!.setValue(intensity, forKey:"inputIntensity")
+        
+        
+        let random = CIFilter(name:"CIRandomGenerator")
+//        random?.setValue(0.3, forKey: "inputIntensity")
+        var croppedRandomImage : CIImage!
+        if #available(iOS 8.0, *) {
+            croppedRandomImage = random!.outputImage!.imageByClampingToExtent()
+        } else {
+            // Fallback on earlier versions
+        }
+//        let transformImage = random!.outputImage!.imageByApplyingTransform(CGAffineTransformMakeScale(1.0, 1.0))
+
+         2
+        let colorMatrix = CIFilter(name:"CIColorMatrix")
+        
+        colorMatrix!.setValue(croppedRandomImage, forKey:kCIInputImageKey)
+        colorMatrix!.setValue(CIVector(values: [0, 1, 0, 0], count: 4), forKey:"inputRVector")
+        colorMatrix!.setValue(CIVector(values: [0, 1, 0, 0], count: 4), forKey:"inputGVector")
+        colorMatrix!.setValue(CIVector(values: [0, 1, 0, 0], count: 4), forKey:"inputBVector")
+        colorMatrix!.setValue(CIVector(values: [0, 0, 0, 0], count: 4), forKey:"inputBiasVector")
+
+        
+
+        
+        // 3 (sepia tone, white specks)
+        let sourceOverCompositing = CIFilter(name:"CISourceOverCompositing")
+        sourceOverCompositing!.setValue(colorMatrix?.outputImage, forKey:kCIInputImageKey)
+        sourceOverCompositing!.setValue(sepia!.outputImage, forKey:"inputBackgroundImage")
+
+        
+        
+        
+        
+//        // 4
+        let random1 = CIFilter(name:"CIRandomGenerator")
+//        let croppedRandom1Image = random1!.outputImage!.imageByCroppingToRect(img.extent)
+        let transformImage1 = random1!.outputImage!.imageByApplyingTransform(CGAffineTransformMakeScale(1.5, 25.0))
+        
+        
+        // 5
+        let colorMatrix1 = CIFilter(name:"CIColorMatrix")
+        
+        colorMatrix1!.setValue(transformImage1, forKey:kCIInputImageKey)
+        colorMatrix1!.setValue(CIVector(values: [4, 0, 0, 0], count: 4), forKey:"inputRVector")
+        colorMatrix1!.setValue(CIVector(values: [0, 0, 0, 0], count: 4), forKey:"inputGVector")
+        colorMatrix1!.setValue(CIVector(values: [0, 0, 0, 0], count: 4), forKey:"inputBVector")
+        colorMatrix1!.setValue(CIVector(values: [0, 0, 0, 0], count: 4), forKey:"inputAVector")
+        colorMatrix1!.setValue(CIVector(values: [0, 1, 1, 1], count: 4), forKey:"inputBiasVector")
+        
+        // 5.a
+        let minimumComponent = CIFilter(name:"CIMinimumComponent")
+        minimumComponent!.setValue(colorMatrix1?.outputImage, forKey:kCIInputImageKey)
+        
+        
+        // 6
+        let multiplyCompositing = CIFilter(name:"CIMultiplyCompositing")
+        
+        multiplyCompositing!.setValue(minimumComponent?.outputImage, forKey:kCIInputImageKey)
+        multiplyCompositing!.setValue(sourceOverCompositing?.outputImage, forKey: "inputBackgroundImage")
+        
+        
+
+        return multiplyCompositing!.outputImage!
+    }
+    
+    
+    
     var number = 0.0
     // MohsinDelegate
     func filterImageBuffer(sourceImage : CIImage) -> CIImage?{
@@ -367,17 +441,17 @@ class RosyWriterViewController: UIViewController, RosyWriterCapturePipelineDeleg
 //        self.filter.setValue(CIVector(values: [200,200], count: 2), forKey: "inputCenter")
         self.filter.setValue(number, forKey: "inputAngle")
         number += 0.05
+//        self.filter.setValue(sourceImage, forKey: kCIInputImageKey)
+//        let filteredImage = self.filter.valueForKey(kCIOutputImageKey) as! CIImage?
         
-        
-        let filteredImage1 = self.oldPhoto(sourceImage, withAmount: 0.6)
+        let filteredImage1 = self.oldFilmPhoto(sourceImage, withAmount: 0.9)
 
-        self.filter.setValue(filteredImage1, forKey: kCIInputImageKey)
-        let filteredImage = self.filter.valueForKey(kCIOutputImageKey) as! CIImage?
+
         
         
         
         
-        return filteredImage
+        return filteredImage1
     }
 
     
